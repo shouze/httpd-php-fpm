@@ -1,0 +1,10 @@
+[package]
+name = "httpd-php-fpm"
+version = "0.0.1"
+authors = ["Sébastien HOUZÉ <sebastien.houze@french-hospitality.fr>"]
+edition = "2018"
+
+[dependencies]
+hyper = "0.13"
+tokio = { version = "0.2", features = ["macros", "fs", "io-util", "signal"] }
+clap = "2.33.0"
