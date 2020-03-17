@@ -1,6 +1,11 @@
 #![deny(warnings)]
 
+extern crate pretty_env_logger;
+#[macro_use]
+extern crate log;
+
 use std::convert::Infallible;
+use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
@@ -24,12 +29,6 @@ struct Config {
 
 async fn handle_request(config: &Config, req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let filename = config.docroot.join(&req.uri().path()[1..]);
-    println!(
-        "{} {}{}",
-        req.method(),
-        req.uri().path(),
-        req.uri().query().unwrap_or("")
-    );
     match filename.exists() {
         true => match filename.extension() != Some(OsStr::new("php")) {
             true => Ok(serve_static_file(&filename).await),
@@ -47,8 +46,6 @@ async fn fastcgi_proxy() -> Response<Body> {
 async fn serve_static_file(filename: &Path) -> Response<Body> {
     //   TODO:
     //   - mime types when serving static files
-    //   - remove some debugs println
-    println!("serving {}", filename.display());
     if let Ok(mut file) = File::open(filename).await {
         let mut buf = Vec::new();
         if let Ok(_) = file.read_to_end(&mut buf).await {
@@ -73,7 +70,12 @@ async fn serve_static_file(filename: &Path) -> Response<Body> {
             return internal_server_error();
         }
 
-        println!("serving {}", resolved_filename.display());
+        debug!(
+            "Resolved {} into {}",
+            filename.display(),
+            resolved_filename.display()
+        );
+
         if let Ok(mut file) = File::open(resolved_filename).await {
             if let Ok(_) = file.read_to_end(&mut buf).await {
                 return Response::new(buf.into());
@@ -111,6 +113,10 @@ async fn shutdown_signal() {
 
 #[tokio::main]
 pub async fn main() {
+    if env::var_os("RUST_LOG").is_none() {
+        env::set_var("RUST_LOG", "info");
+    }
+    pretty_env_logger::init();
     let app = App::new(APP_NAME)
         .version(VERSION)
         .about("Lightweight 🍃 fast ⚡ fastcgi php 🐘 proxy and static http server.")
@@ -154,6 +160,7 @@ pub async fn main() {
         async move {
             Ok::<_, Infallible>(service_fn(move |req: Request<Body>| {
                 let onion2 = Arc::clone(&onion1);
+                info!("{:?}", req);
                 async move { handle_request(&*onion2, req).await }
             }))
         }
@@ -162,7 +169,8 @@ pub async fn main() {
     // TODO: spawn php-fpm master process
     let server = Server::bind(&addr).tcp_nodelay(true).serve(make_svc);
 
-    println!("Listening on http://{},\nserving docroot {}", addr, docroot);
+    info!("Listening on http://{}", addr);
+    info!("Serving docroot {}", docroot);
     let graceful = server.with_graceful_shutdown(shutdown_signal());
 
     if let Err(e) = graceful.await {
