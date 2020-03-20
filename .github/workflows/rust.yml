@@ -1,0 +1,23 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Add components
+      run: rustup component add rustfmt
+    - name: Build
+      run: cargo build --verbose
+    - name: Run Rustfmt
+      run: cargo fmt --all -- --check
+    - name: Run tests
+      run: cargo test --verbose
