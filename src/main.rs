@@ -11,7 +11,7 @@ use tokio::io::AsyncReadExt;
 use clap::{App, Arg};
 
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Request, Response, Server, StatusCode};
+use hyper::{Body, header, Request, Response, Server, StatusCode};
 
 const APP_NAME: &'static str = env!("CARGO_PKG_NAME");
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -44,15 +44,22 @@ async fn fastcgi_proxy() -> Response<Body> {
     return not_found();
 }
 
+fn create_response_from_path(path: &Path, content: Vec<u8>) -> Response<Body> {
+    let mut response =  Response::new(content.into());
+    if let Some(mime) = mime_guess::from_path(path).first() {
+        response.headers_mut().insert(header::CONTENT_TYPE, header::HeaderValue::from_str(format!("{}", mime).as_str()).unwrap());
+    }
+    response
+}
+
 async fn serve_static_file(filename: &Path) -> Response<Body> {
     //   TODO:
-    //   - mime types when serving static files
     //   - remove some debugs println
     println!("serving {}", filename.display());
     if let Ok(mut file) = File::open(filename).await {
         let mut buf = Vec::new();
         if let Ok(_) = file.read_to_end(&mut buf).await {
-            return Response::new(buf.into());
+            return create_response_from_path(filename, buf);
         }
 
         let index_html = filename.join("index.html");
@@ -74,9 +81,9 @@ async fn serve_static_file(filename: &Path) -> Response<Body> {
         }
 
         println!("serving {}", resolved_filename.display());
-        if let Ok(mut file) = File::open(resolved_filename).await {
+        if let Ok(mut file) = File::open(resolved_filename.as_path()).await {
             if let Ok(_) = file.read_to_end(&mut buf).await {
-                return Response::new(buf.into());
+                return create_response_from_path(resolved_filename.as_ref(), buf);
             }
 
             return internal_server_error();

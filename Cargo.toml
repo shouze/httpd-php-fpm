@@ -8,3 +8,4 @@ edition = "2018"
 hyper = "0.13"
 tokio = { version = "0.2", features = ["macros", "fs", "io-util", "signal"] }
 clap = "2.33.0"
+mime_guess = "2.0.3"
