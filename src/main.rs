@@ -11,7 +11,7 @@ use tokio::io::AsyncReadExt;
 use clap::{App, Arg};
 
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, header, Request, Response, Server, StatusCode};
+use hyper::{header, Body, Request, Response, Server, StatusCode};
 
 const APP_NAME: &'static str = env!("CARGO_PKG_NAME");
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -45,9 +45,12 @@ async fn fastcgi_proxy() -> Response<Body> {
 }
 
 fn create_response_from_path(path: &Path, content: Vec<u8>) -> Response<Body> {
-    let mut response =  Response::new(content.into());
+    let mut response = Response::new(content.into());
     if let Some(mime) = mime_guess::from_path(path).first() {
-        response.headers_mut().insert(header::CONTENT_TYPE, header::HeaderValue::from_str(format!("{}", mime).as_str()).unwrap());
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_str(format!("{}", mime).as_str()).unwrap(),
+        );
     }
     response
 }
