@@ -4,19 +4,19 @@ Lightweight 🍃 fast ⚡ fastcgi php 🐘 proxy and static http server.
 
 ## Why another http server for php?
 
-Because nowaday either you go serverless, either you manage distributed services 
+Because nowaday either you go serverless, or you manage distributed services 
 in containers. httpd-php-fpm focus on containerized php world.
 
 Well known existing solutions are:
   - [apache + mod-php](https://hub.docker.com/layers/php/library/php/7.4-apache/images/sha256-48dde1707d7dca2b701aa230344c58cb8ec5b0ce8e9dbceced65bec5ccd7d1d0?context=explore): the more official & recommended solution. Unfortunately, 
     this automatically imply a debian based docker image, pretty heavy (>=140Mib) 😭
-  - [nginx + php-fpm](https://hub.docker.com/layers/webdevops/php-nginx/alpine/images/sha256-6cada7ab54b149645ea149dde876c70b60a44869c14a360fda328fabb357e2ed?context=explore): the bad is that to avoid to violate the container's single
+  - [nginx + php-fpm](https://hub.docker.com/layers/webdevops/php-nginx/alpine/images/sha256-6cada7ab54b149645ea149dde876c70b60a44869c14a360fda328fabb357e2ed?context=explore): the bad news is that to avoid violating the container's single
     root process principle... we also need an init to supervise both nginx & 
-    php processes, and the resulting base docker image is still heavy, even an 
+    php processes, and the resulting base docker image is still heavy, even with an 
     alpine variant (>=90Mib) 😭
   - [symfony cli](https://github.com/symfony/cli/releases): not recommended 
     for production, not single responsibility (also embed Symfony Cloud utils), 
-    closed source and written in Go (hello garbage collector). It also try to 
+    closed source and written in Go (hello garbage collector). It also tries to 
     bring the better developer experience so it does some voodoo, trying to make 
     things work whatever your php setup is.
 
